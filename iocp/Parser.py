@@ -95,23 +95,19 @@ class Parser(object):
 		self.whitelist = self.load_whitelists(wldir)
 
 		self.dedup = dedup
-		if output_handler:
-			self.handler = output_handler
-		else:
-			self.handler = Output.getHandler(output_format)
-
-		self.ext_filter = "*." + input_format
-		parser_format = "parse_" + input_format
+		self.handler = output_handler or Output.getHandler(output_format)
+		self.ext_filter = f"*.{input_format}"
+		parser_format = f"parse_{input_format}"
 		try:
 			self.parser_func = getattr(self, parser_format)
 		except AttributeError:
-			e = 'Selected parser format is not supported: %s' % (input_format)
+			e = f'Selected parser format is not supported: {input_format}'
 			raise NotImplementedError(e)
 
 		self.library = library
 		if input_format == 'pdf':
 			if library not in IMPORTS:
-				e = 'Selected PDF parser library not found: %s' % (library)
+				e = f'Selected PDF parser library not found: {library}'
 				raise ImportError(e)
 		elif input_format == 'html':
 			if 'beautifulsoup' not in IMPORTS:
@@ -192,10 +188,7 @@ class Parser(object):
 				self.dedup_store = set()
 
 			self.handler.print_header(fpath)
-			page_num = 0
-			for page in pdf.pages:
-				page_num += 1
-
+			for page_num, page in enumerate(pdf.pages, start=1):
 				data = page.extractText()
 
 				self.parse_page(fpath, data, page_num)
@@ -206,7 +199,7 @@ class Parser(object):
 	def parse_pdf_pdfminer(self, f, fpath):
 		try:
 			laparams = LAParams()
-			laparams.all_texts = True  
+			laparams.all_texts = True
 			rsrcmgr = PDFResourceManager()
 			pagenos = set()
 
@@ -214,10 +207,7 @@ class Parser(object):
 				self.dedup_store = set()
 
 			self.handler.print_header(fpath)
-			page_num = 0
-			for page in PDFPage.get_pages(f, pagenos, check_extractable=True):
-				page_num += 1
-
+			for page_num, page in enumerate(PDFPage.get_pages(f, pagenos, check_extractable=True), start=1):
 				retstr = StringIO()
 				device = TextConverter(rsrcmgr, retstr, codec='utf-8', laparams=laparams)
 				interpreter = PDFPageInterpreter(rsrcmgr, device)
@@ -231,13 +221,13 @@ class Parser(object):
 			raise
 
 	def parse_pdf(self, f, fpath):
-		parser_format = "parse_pdf_" + self.library
+		parser_format = f"parse_pdf_{self.library}"
 		try:
 			self.parser_func = getattr(self, parser_format)
 		except AttributeError:
-			e = 'Selected PDF parser library is not supported: %s' % (self.library)
+			e = f'Selected PDF parser library is not supported: {self.library}'
 			raise NotImplementedError(e)
-			
+
 		self.parser_func(f, fpath)
 
 	def parse_txt(self, f, fpath):
@@ -300,7 +290,7 @@ class Parser(object):
 							self.parser_func(f, fpath)
 				return
 
-			e = 'File path is not a file, directory or URL: %s' % (path)
+			e = f'File path is not a file, directory or URL: {path}'
 			raise IOError(e)
 		except (KeyboardInterrupt, SystemExit):
 			raise

@@ -13,7 +13,7 @@ def getHandler(output_format):
 		print("[WARNING] Invalid output format specified... using CSV")
 		output_format = 'csv'
 
-	handler_format = "OutputHandler_" + output_format
+	handler_format = f"OutputHandler_{output_format}"
 	handler_class = getattr(sys.modules[__name__], handler_format)
 
 	return handler_class()
@@ -29,7 +29,7 @@ class OutputHandler(object):
 		pass
 
 	def print_error(self, fpath, exception):
-		print("[ERROR] %s" % (exception))
+		print(f"[ERROR] {exception}")
 
 class OutputHandler_csv(OutputHandler):
 	def __init__(self):
@@ -91,7 +91,7 @@ class OutputHandler_yara(OutputHandler):
 	def print_header(self, fpath):
 		rule_name = os.path.splitext(os.path.basename(fpath))[0].translate(self.rule_enc)
 
-		print("rule %s" % (rule_name))
+		print(f"rule {rule_name}")
 		print("{")
 		print("\tstrings:")
 
